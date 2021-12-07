@@ -59,8 +59,8 @@ export function eventsMixin (Vue: Class<Component>) {
         vm.$on(event[i], fn)
       }
     } else {
-      //  创建一个私有属性_events保存 所定义事件的键值对关系
-      (vm._events[event] || (vm._events[event] = [])).push(fn)
+      //  创建一个私有属性_events保存 所定义事件的键值对关系,一个key对应多个事件
+      (vm._events[event] || (vm._events[event] = [])).push(fn) // {key: [eventFn1,eventFn2]}
       // optimize hook:event cost by using a boolean flag marked at registration
       // instead of a hash lookup
       if (hookRE.test(event)) {
@@ -83,27 +83,30 @@ export function eventsMixin (Vue: Class<Component>) {
 
   Vue.prototype.$off = function (event?: string | Array<string>, fn?: Function): Component {
     const vm: Component = this
-    // all
+    // all 如果没传入任何参数，则移除所有的事件
     if (!arguments.length) {
       vm._events = Object.create(null)
       return vm
     }
-    // array of events
+    // 如果传入的是一个数组，递归key移除事件
+    // array of events  
     if (Array.isArray(event)) {
       for (let i = 0, l = event.length; i < l; i++) {
         vm.$off(event[i], fn)
       }
       return vm
     }
-    // specific event
-    const cbs = vm._events[event]
+    // 精确移除一个事件
+    // specific event 
+    const cbs = vm._events[event] // key的事件数组
     if (!cbs) {
       return vm
     }
-    if (!fn) {
+    if (!fn) { // 只传key，不传事件名，说明移除这个key里面的所有事件
       vm._events[event] = null
       return vm
     }
+    // 移除key中具体的某一个事件
     // specific handler
     let cb
     let i = cbs.length
